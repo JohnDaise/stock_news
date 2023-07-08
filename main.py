@@ -45,10 +45,10 @@ new_list = [float(value['4. close']) for (key, value) in data.items()]
 yesterday_close = new_list[0]
 day_before_yesterday_close = new_list[1]
 
-difference = yesterday_close-day_before_yesterday_close
-abs_difference = abs(difference)
+difference = abs(yesterday_close-day_before_yesterday_close)
+difference_percent = (difference/yesterday_close) * 100
 
-if abs_difference > 5:
+if difference > 5:
     # print("Get News")
     if difference < 0:
         direction = "🔻"
