@@ -1,6 +1,8 @@
 import requests
 import os
 from dotenv import load_dotenv
+from twilio.rest import Client
+from twilio.http.http_client import TwilioHttpClient
 
 load_dotenv()
 
@@ -12,6 +14,11 @@ NEWS_ENDPOINT = "https://newsapi.org/v2/everything"
 
 STOCK_API_KEY = os.environ.get("STOCK_API_KEY")
 NEWS_API_KEY = os.environ.get("NEWS_API_KEY")
+
+auth_token = os.environ.get("AUTH_TOKEN")
+account_sid = os.environ.get("ACCOUNT_SID")
+
+NUM_TOP_ARTICLES = 3
 
 stock_params = {
     "function": "TIME_SERIES_DAILY_ADJUSTED",
@@ -30,26 +37,47 @@ news_params = {
 
 #TODO 1. - Get yesterday's closing stock price. Hint: You can perform list comprehensions on Python dictionaries. e.g. [new_value for (key, value) in dictionary.items()]
 
-# response = requests.get(STOCK_ENDPOINT, params=stock_params)
-# response.raise_for_status()
-# data = response.json()["Time Series (Daily)"]
-# new_list = [float(value['4. close']) for (key, value) in data.items()]
-# # print(new_list)
-# yesterday_close = new_list[0]
-# day_before_yesterday_close = new_list[1]
-# # print(yesterday_close)
-# # print(day_before_yesterday_close)
-#
-# difference = abs(yesterday_close-day_before_yesterday_close)
-# if difference > 5:
-#     print("Get News")
+response = requests.get(STOCK_ENDPOINT, params=stock_params)
+response.raise_for_status()
+data = response.json()["Time Series (Daily)"]
+new_list = [float(value['4. close']) for (key, value) in data.items()]
 
-news_response = requests.get(NEWS_ENDPOINT, params=news_params)
-news_response.raise_for_status()
-news_data = news_response.json()
-top_articles = news_data["articles"][:3]
+yesterday_close = new_list[0]
+day_before_yesterday_close = new_list[1]
 
+difference = yesterday_close-day_before_yesterday_close
+abs_difference = abs(difference)
 
+if abs_difference > 5:
+    # print("Get News")
+    if difference < 0:
+        direction = "🔻"
+    else:
+        direction = "🔺"
+
+    news_response = requests.get(NEWS_ENDPOINT, params=news_params)
+    news_response.raise_for_status()
+    news_data = news_response.json()
+    top_articles = news_data["articles"][:NUM_TOP_ARTICLES]
+
+    for article in top_articles:
+        # proxy_client = TwilioHttpClient()
+        # proxy_client.session.proxies = {'https': os.environ['https_proxy']}
+
+        message_text = f'''
+        {STOCK_NAME}: {direction} {abs_difference}%
+        Headline: {article["title"]}
+        Brief: {article["description"]}
+        '''
+
+        client = Client(account_sid, auth_token)
+        message = client.messages.create(
+          from_=os.environ.get("FROM_TWILIO_NUM"),
+          to=os.environ.get("TO_TWILIO_NUM"),
+          body=message_text
+        )
+        print(message.sid)
+        print(message.status)
 
 
 #TODO 2. - Get the day before yesterday's closing stock price
