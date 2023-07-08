@@ -10,13 +10,18 @@ COMPANY_NAME = "Tesla Inc"
 STOCK_ENDPOINT = "https://www.alphavantage.co/query"
 NEWS_ENDPOINT = "https://newsapi.org/v2/everything"
 
-API_KEY = os.environ.get("STOCK_API_KEY")
-
+STOCK_API_KEY = os.environ.get("STOCK_API_KEY")
+NEWS_API_KEY = os.environ.get("NEWS_API_KEY")
 
 stock_params = {
     "function": "TIME_SERIES_DAILY_ADJUSTED",
     "symbol": STOCK_NAME,
-    "apikey": API_KEY
+    "apikey": STOCK_API_KEY
+}
+
+news_params = {
+    "q": COMPANY_NAME,
+    "apiKey": NEWS_API_KEY
 }
 
 
@@ -25,24 +30,26 @@ stock_params = {
 
 #TODO 1. - Get yesterday's closing stock price. Hint: You can perform list comprehensions on Python dictionaries. e.g. [new_value for (key, value) in dictionary.items()]
 
-response = requests.get(STOCK_ENDPOINT, params=stock_params)
-response.raise_for_status()
-data = response.json()["Time Series (Daily)"]
-new_list = [float(value['4. close']) for (key, value) in data.items()]
-# print(new_list)
-yesterday_close = new_list[0]
-day_before_yesterday_close = new_list[1]
-# print(yesterday_close)
-# print(day_before_yesterday_close)
+# response = requests.get(STOCK_ENDPOINT, params=stock_params)
+# response.raise_for_status()
+# data = response.json()["Time Series (Daily)"]
+# new_list = [float(value['4. close']) for (key, value) in data.items()]
+# # print(new_list)
+# yesterday_close = new_list[0]
+# day_before_yesterday_close = new_list[1]
+# # print(yesterday_close)
+# # print(day_before_yesterday_close)
+#
+# difference = abs(yesterday_close-day_before_yesterday_close)
+# if difference > 5:
+#     print("Get News")
 
-difference = abs(yesterday_close-day_before_yesterday_close)
-if difference > 5:
-    print("Get News")
-    
+news_response = requests.get(NEWS_ENDPOINT, params=news_params)
+news_response.raise_for_status()
+news_data = news_response.json()
+top_articles = news_data["articles"][:3]
 
-# 08. previous close
-# print(data["Global Quote"]["08. previous close"])
-quit
+
 
 
 #TODO 2. - Get the day before yesterday's closing stock price
